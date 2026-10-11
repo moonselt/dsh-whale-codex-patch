@@ -1,0 +1,10 @@
+{
+  "0.4.1": {
+    "lib/index.js": "117afb3df716a769c6d3c21d2603fbd6fa2612a5d5a4778e5aa01a56d5bb8e0a",
+    "assets/whale-widget.js": "3a07d99a643da95ec9caf72067d86fe19288dc9171c0ba96d0cb20c32faff956"
+  },
+  "0.4.2": {
+    "lib/index.js": "9f7ec013f56fc4f102ad4f739bd254ad247c66f023ae6f7e00bb0ff425c79485",
+    "assets/whale-widget.js": "7b9ac4808896b68f835d2924217193ecf57f840f872fb4ea84ca028ae7172deb"
+  }
+}

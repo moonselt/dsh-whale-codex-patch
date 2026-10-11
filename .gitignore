@@ -1,0 +1,19 @@
+# 从本机 app.asar / 第三方包提取的只读材料：体积大，且可由脚本重新提取
+research/
+core/
+
+# 本机运行残留与备份（含本机路径、profile 配置副本）
+restore-backups/
+settings-backup/
+layout-chrome-profile/
+test-home/
+guard-test/
+receipts/
+guard/receipts/
+guard/backups/
+
+# 生成物：由 make-layout-test.cjs 重新生成
+layout-test.html
+layout-dom.html
+
+*.tmp

@@ -1,0 +1,19 @@
+{
+  "name": "dsh-whale-patch-guard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DSH 启动时自动把小鲸鱼挂件的 Codex 记账 / 模型跟随 / 紧凑气泡补丁重放回 dsh-whale-widget，避免插件升级覆盖后需要手工恢复。仅在版本白名单与源码哈希都匹配时写入，否则只告警。",
+  "type": "module",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "cordis.patch.yml",
+    "data"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "license": "MIT"
+}
