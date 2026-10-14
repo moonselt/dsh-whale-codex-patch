@@ -6,7 +6,8 @@
 - 按 DSH `uiSession.current` 与可见主会话的 `modelDirectories` 订阅选择，设置面板遮盖主会话时清空当前模型。
 - DeepSeek 保留原来的余额、消费及峰谷内容；Codex 气泡复用既有 `plan` 模块显示短窗/周剩余额度与紧凑重置时间，不显示今日消耗。token 统计仍保留在记账菜单中。
 - 使用模型独立额度分组时优先匹配；Spark 不误用主额度，Reserve 未返回专属额度时显示不可用。
-- 原配置不落盘修改；标准财务卡在 Codex 下投影为四行紧凑卡并限制字号，沿用原文字配色与字体，DeepSeek 恢复原样。随机台词、等待/授权、消费通知以及固定其他厂商的模块不改。
+- 原配置不落盘修改；标准财务卡在 Codex 下投影为四行紧凑卡并限制字号，使用龙娘紫色系字色，DeepSeek 恢复原样。随机台词、等待/授权、消费通知以及固定其他厂商的模块不改。
+- 使用 GPT 模型时自动切换到本机角色图库的「GPT 小龙娘」，DeepSeek 自动切回小鲸鱼；龙娘角色图以脸和眼睛为锚点裁切放大约 13%。图片来源及权利声明见 `role-assets/SOURCE.md`。
 - 订阅 token 不按人民币估价；历史账本不回写。token 统计限接入后、账本保留期内的已完成 DSH 会话事件。
 
 ## 安装与生效
@@ -17,9 +18,13 @@
 
 ## 验证
 
-```powershell
-& 'C:\Users\15593\.dsh\dsh-runtimes\dsh-primary-runtime\dependencies\node\bin\node.exe' 'codex-whale/test.mjs'
-& 'C:\Users\15593\.dsh\dsh-runtimes\dsh-primary-runtime\dependencies\node\bin\node.exe' 'codex-whale/test-follow.mjs'
+从本仓库的**上一级工作目录**执行（部分旧测试使用 `codex-whale/` 相对路径，需要 Node.js）：
+
+```sh
+node codex-whale/test.mjs
+node codex-whale/test-follow.mjs
+node codex-whale/test-guard.mjs
+node codex-whale/test-dragon-role.mjs
 ```
 
 记账/额度测试 11 项，模型跟随测试 16 项，包括旧请求晚到、会话切换、独立窗口、界面隐藏、断连/账号刷新、原生 plan 占位符、移除旧峰谷时钟与不修改气泡配置。
@@ -32,9 +37,9 @@
 
 已把补丁逐段迁移到 0.4.1 与 0.4.2，保留各版自己的修复（0.4.1 图片命中与真实画布包围盒、0.4.2 极短按下的压扁回弹）与原版本号，未用旧版整包覆盖。
 
-插件升级仍可能覆盖本地补丁，因为原鲸鱼没有稳定的计费/气泡扩展钩子。目前未安装自动监控、启动任务或独立 addon。
+已经部署 `dsh-whale-patch-guard` 守护插件，在启动和已知版本的更新后尝试安全重放：仅对已保存原版快照且哈希、锚点校验通过的版本写入，其余版本只告警。插件升级仍可能引入未适配版本，不保证每次自动恢复。
 
-更新后可双击 [恢复Codex气泡.cmd](<codex-whale/恢复Codex气泡.cmd>)。入口调用 [恢复脚本](<codex-whale/reapply.cjs>)，会检查版本白名单（0.4.0 / 0.4.1 / 0.4.2）、原版文件哈希及唯一源码锚点，跑 27 项回归测试后备份和安装，再验证全部文件哈希；已安装时只校验，不重复修改。若未来版本未适配或原版被修改，会停止并提示人工复核，不盲改。
+更新后也可双击 [恢复Codex气泡.cmd](<codex-whale/恢复Codex气泡.cmd>)。入口调用 [恢复脚本](<codex-whale/reapply.cjs>)，会检查版本白名单（0.4.0 / 0.4.1 / 0.4.2）、原版文件哈希及唯一源码锚点，跑 27 项回归测试后备份和安装，再验证全部文件哈希；已安装时只校验，不重复修改。若未来版本未适配或原版被修改，会停止并提示人工复核，不盲改。
 
 每个受支持版本的原版快照在 `codex-whale/upgrade-<版本>/upstream`；兼容测试还会逐字节校验「锚点之外的上游内容都被保留」，防止新版正文被顺手改掉。
 

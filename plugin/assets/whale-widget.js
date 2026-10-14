@@ -4705,20 +4705,20 @@ function whaleFollowCompactModules(mods, view) {
   var hint = mods.find(function (m) { return m.type === 'today' }) || {}
   // Reuse the existing text/plan modules, original formatter and row renderer.
   // Only whitelist visual properties: no peakStyle=count can reach the ticker.
-  function style(source, cap) {
-    return { size: Math.min(Number(source.size) || cap, cap), color: source.color || '', rgb: source.rgb || '',
+  function style(source, cap, color) {
+    return { size: Math.min(Number(source.size) || cap, cap), color: color, rgb: '',
       bold: !!source.bold, fontFamily: source.fontFamily || '', italic: false, ul: false, bg: '', bgRgb: '' }
   }
-  var card = [Object.assign(style(title, 5), { type: 'text', text: view.label, row: 1 })]
+  var card = [Object.assign(style(title, 5, '#66588b'), { type: 'text', text: view.label, row: 1 })]
   if (!view.plan.ok) {
-    card.push(Object.assign(style(amount, 16), { type: 'text', text: '—', bold: true, row: 2 }))
-    card.push(Object.assign(style(hint, 2), { type: 'text', text: view.peak, row: 3 }))
+    card.push(Object.assign(style(amount, 16, '#7462a8'), { type: 'text', text: '—', bold: true, row: 2 }))
+    card.push(Object.assign(style(hint, 2, '#8f7bac'), { type: 'text', text: view.peak, row: 3 }))
     return card
   }
   var windows = view.plan.windows
-  card.push(Object.assign(style(amount, 16), { type: 'plan', modelId: '__whale_current_codex__', planWin: windows[0].key, tpl: '{plan_left}', bold: true, row: 2 }))
-  if (windows.length > 1) card.push(Object.assign(style(hint, 3), { type: 'plan', modelId: '__whale_current_codex__', planWin: windows[1].key, tpl: '{plan_left}', row: 3 }))
-  card.push(Object.assign(style(hint, 2), { type: 'plan', modelId: '__whale_current_codex__', planWin: windows[0].key, tpl: '重置 {plan_reset}', row: 4 }))
+  card.push(Object.assign(style(amount, 16, '#7462a8'), { type: 'plan', modelId: '__whale_current_codex__', planWin: windows[0].key, tpl: '{plan_left}', bold: true, row: 2 }))
+  if (windows.length > 1) card.push(Object.assign(style(hint, 3, '#917db0'), { type: 'plan', modelId: '__whale_current_codex__', planWin: windows[1].key, tpl: '{plan_left}', row: 3 }))
+  card.push(Object.assign(style(hint, 2, '#8f7bac'), { type: 'plan', modelId: '__whale_current_codex__', planWin: windows[0].key, tpl: '重置 {plan_reset}', row: 4 }))
   return card
 }
 function whaleFollowModules(mods, view) {
@@ -4737,12 +4737,18 @@ function whaleFollowModules(mods, view) {
     if (text === null) return m
     var copy = Object.assign({}, m, { type: 'text', text: text, tpl: '' })
     if (m.type === 'balance' && !m.bold) copy.bold = true
+    if (view.subscription) {
+      copy.color = m.type === 'balance' ? '#7462a8' : m.type === 'today' ? '#917db0' : m.type === 'text' ? '#66588b' : '#8f7bac'
+      copy.rgb = ''
+    }
     if (m.type === 'peak' || m.type === 'nextpeak') {
       delete copy.peakStyle
       copy.bg = m.offBg || m.bg || ''
       copy.bgRgb = m.offBgRgb || m.bgRgb || ''
-      copy.color = m.offColor || m.color || ''
-      copy.rgb = m.offRgb || m.rgb || ''
+      if (!view.subscription) {
+        copy.color = m.offColor || m.color || ''
+        copy.rgb = m.offRgb || m.rgb || ''
+      }
     }
     return copy
   })
@@ -4775,6 +4781,7 @@ window.addEventListener('dsh-whale:current-model', function (event) {
   if (animId) { cancelAnimationFrame(animId); animId = null }
   shown = state.balance
   bubbleFollowRefresh(true)
+  if (nextKey !== previousKey) whaleSyncModelRole()
   if (nextKey !== previousKey || !apiModelsLoaded) {
     try { loadApiModels(function () { bubbleFollowRefresh(true) }, true) } catch (err) {}
   }
@@ -19233,6 +19240,11 @@ function render() {
   // 消耗金额泡泡显示期间，余额渲染不覆盖其内容（金额行/标题行/提示行）
   if (costBubbleActive) return
   var modelView = whaleFollowView(whaleFollowSelection, apiModels, Date.now())
+  if (!bubbleScene || bubbleScene.kind === 'normal') {
+    labelEl.style.color = modelView && modelView.subscription ? '#66588b' : ''
+    amountEl.style.color = modelView && modelView.subscription ? '#7462a8' : ''
+    hintEl.style.color = modelView && modelView.subscription ? '#8f7bac' : ''
+  }
   if ((!bubbleScene || bubbleScene.kind === 'normal') && modelView) {
     labelEl.textContent = modelView.label
     amountEl.textContent = modelView.balance
@@ -20147,6 +20159,27 @@ function positionMenu() {
 var ROLE_URL = '/dsh-whale/roles.json'
 var currentRole = { id: 'default', name: '小鲸鱼', url: IMG_URL }
 var roleList = []
+// WHALE_MODEL_ROLE_START
+var WHALE_GPT_ROLE_ID = 'role_gpt_dragon'
+function whaleModelRole(selection, roles) {
+  if (!selection || !selection.provider) return null
+  if (whaleFollowDeepSeek(selection)) return { id: 'default', name: '小鲸鱼', url: IMG_URL }
+  var gpt = selection.provider === 'openai-codex' || /^(?:openai\/)?gpt(?:[-/]|$)/i.test(String(selection.model || ''))
+  if (!gpt) return null
+  for (var i = 0; i < (roles || []).length; i++) {
+    var role = roles[i]
+    if (role && role.id === WHALE_GPT_ROLE_ID && role.url) return Object.assign({}, role, { url: role.url + (role.url.indexOf('?') >= 0 ? '&' : '?') + 'v=face-2' })
+  }
+  return null
+}
+function whaleSyncModelRole() {
+  if (!currentRole || !Array.isArray(roleList)) return false
+  var wanted = whaleModelRole(whaleFollowSelection, roleList)
+  if (!wanted) return false
+  if (currentRole.id !== wanted.id || img.getAttribute('src') !== wanted.url) applyRole(wanted.id, wanted.name, wanted.url, true)
+  return true
+}
+// WHALE_MODEL_ROLE_END
 function loadRoles() {
   try {
     fetch(ROLE_URL, { cache: 'no-store' })
@@ -20155,6 +20188,7 @@ function loadRoles() {
         if (!d || !d.ok || !Array.isArray(d.roles)) return
         roleList = d.roles
         renderRolePanel()
+        if (whaleSyncModelRole()) return
         // 恢复上次选择的角色
         var saved = ''
         try { saved = localStorage.getItem('dshw-role') || '' } catch (err) {}
@@ -20262,11 +20296,12 @@ function makeNameCell(className, text) {
   outer.appendChild(inner)
   return outer
 }
-function applyRole(id, name, url) {
+function applyRole(id, name, url, automatic) {
   currentRole = { id: id, name: name, url: url }
   img.src = url
+  img.alt = name
   setRoleBtnText(name)
-  try { localStorage.setItem('dshw-role', id) } catch (err) {}
+  if (!automatic) { try { localStorage.setItem('dshw-role', id) } catch (err) {} }
   hitReady = false
   hitFailed = false
   setupHitTest(url)

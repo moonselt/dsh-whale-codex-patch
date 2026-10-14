@@ -70,7 +70,7 @@ function patchedSignature(dir) {
     const backend = fs.readFileSync(path.join(dir, 'lib/index.js'), 'utf8')
     if (!backend.includes("from './codex-subscription.mjs'")) return false
     const frontend = fs.readFileSync(path.join(dir, 'assets/whale-widget.js'), 'utf8')
-    return frontend.includes('WHALE_MODEL_FOLLOW_START') && frontend.includes('WHALE_MODEL_FOLLOW_END')
+    return frontend.includes('WHALE_MODEL_FOLLOW_START') && frontend.includes('WHALE_MODEL_FOLLOW_END') && frontend.includes('WHALE_MODEL_ROLE_START') && frontend.includes('WHALE_MODEL_ROLE_END')
   } catch (error) {
     return false
   }
